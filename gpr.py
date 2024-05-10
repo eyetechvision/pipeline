@@ -26,7 +26,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
 
 
 def train_model():
-    data = pd.read_csv("D:\\pipline\\pipeline\\df_high.csv", delimiter=",")
+    data = pd.read_csv("df_high.csv", delimiter=",")
     print(data.columns)
 
     data["diopter_s"] = pd.to_numeric(data["diopter_s"], errors="coerce")
