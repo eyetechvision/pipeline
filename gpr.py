@@ -26,17 +26,18 @@ class ExactGPModel(gpytorch.models.ExactGP):
 
 
 def train_model():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     data = pd.read_csv("df_high.csv", delimiter=",")
     print(data.columns)
 
     data["diopter_s"] = pd.to_numeric(data["diopter_s"], errors="coerce")
     data["diopter_c"] = pd.to_numeric(data["diopter_c"], errors="coerce")
     data["CR"] = pd.to_numeric(data["CR"], errors="coerce")
-    data["SE"] = data["diopter_s"] + data["diopter_c"] / 2
-    data["ratio"] = data["AL"] / data["CR"]
 
-    X = data[["SE", "CR", "gender"]]
-    y = data["ratio"]
+    X = data[["diopter_s", "CR", "gender"]]
+
+    y = data["AL"]
 
     X = X.dropna()
     y = y.loc[X.index]
@@ -50,15 +51,21 @@ def train_model():
     X_test = scaler.transform(X_test.values)
     joblib.dump(scaler, "scaler.pkl")
 
-    # Convert your data to PyTorch tensors
-    train_x = torch.tensor(X_train).float()
-    train_y = torch.tensor(y_train.values).float()
-    test_x = torch.tensor(X_test).float()
-    test_y = torch.tensor(y_test.values).float()
+    # Convert your data to PyTorch tensors and move them to the GPU if available
+    train_x = torch.tensor(X_train).float().to(device)
+    train_y = torch.tensor(y_train.values).float().to(device)
+    test_x = torch.tensor(X_test).float().to(device)
+    test_y = torch.tensor(y_test.values).float().to(device)
+
+    import os
+
+    smoke_test = "CI" in os.environ
+    training_iter = 2 if smoke_test else 50
 
     # Initialize likelihood and model
-    likelihood = gpytorch.likelihoods.GaussianLikelihood()
-    model = ExactGPModel(train_x, train_y, likelihood)
+    likelihood = gpytorch.likelihoods.GaussianLikelihood().to(device)
+    model = ExactGPModel(train_x, train_y, likelihood).to(device)
+
     # Use the adam optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     # "Loss" for GPs - the marginal log likelihood
@@ -71,51 +78,59 @@ def train_model():
     pbar = tqdm(range(100))
 
     for i in pbar:
-        print(f"Fitting iteration {i+1}")
         optimizer.zero_grad()
         output = model(train_x)
         loss = -mll(output, train_y)
         loss.backward()
-        optimizer.step()
-        # Update tqdm postfix with the current loss
-        pbar.set_postfix({"loss": loss.item()})
 
-    # Switch to eval mode
+        print(
+            "Iter %d/%d - Loss: %.3f   lengthscale: %.3f   noise: %.3f"
+            % (
+                i + 1,
+                training_iter,
+                loss.item(),
+                model.covar_module.base_kernel.lengthscale.item(),
+                model.likelihood.noise.item(),
+            )
+        )
+        optimizer.step()
+    # Switch to evaluation mode
     model.eval()
     likelihood.eval()
 
-    ##################################
+    # Set the device
+    device = torch.device("cpu")  # Use 'cuda' for GPU
+    model = model.to(device)
+    test_x = test_x.to(device)
+
+    # Prediction and confidence interval calculation
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         observed_pred = likelihood(model(test_x))
-        y_pred = observed_pred.mean
+        try:
+            lower, upper = observed_pred.confidence_region()
+        except Exception as e:
+            print("Exception when calculating confidence region:", e)
+    # Calculate evaluation metrics
+    test_y = test_y.to(device)
+    mse = mean_squared_error(test_y.cpu().numpy(), observed_pred.mean.cpu().numpy())
+    mae = mean_absolute_error(test_y.cpu().numpy(), observed_pred.mean.cpu().numpy())
+    r2 = r2_score(test_y.cpu().numpy(), observed_pred.mean.cpu().numpy())
 
-    mse = mean_squared_error(test_y, y_pred)
-    mae = mean_absolute_error(test_y, y_pred)
-    r2 = r2_score(test_y, y_pred)
+    print(f"MSE: {mse}, MAE: {mae}, R2 Score: {r2}")
 
-    print(f"Mean Squared Error: {mse}")
-    print(f"Mean Absolute Error: {mae}")
-    print(f"Coefficient of Determination: {r2}")
+    # Plotting
+    plt.figure(figsize=(10, 7))
+    plt.scatter(test_y.cpu().numpy(), observed_pred.mean.cpu().numpy())
+    plt.plot([test_y.min(), test_y.max()], [test_y.min(), test_y.max()], "k--")
 
-    # Plotting predictions vs actual
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(x=test_y, y=y_pred)
-    plt.plot([test_y.min(), test_y.max()], [test_y.min(), test_y.max()], "k--", lw=4)
-    plt.xlabel("Measured")
+    print(test_x[:10])
+    # Assuming 'lower' and 'upper' are your confidence bounds
+    plt.fill_between(test_x_1d, lower.cpu().numpy(), upper.cpu().numpy(), alpha=0.5)
+
+    plt.xlabel("Actual")
     plt.ylabel("Predicted")
-    plt.title("Predicted vs Actual Values")
-
-    # Residual plot
-    residuals = test_y - y_pred
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(x=y_pred, y=residuals)
-    plt.axhline(y=0, color="r", linestyle="--")
-    plt.xlabel("Predicted Values")
-    plt.ylabel("Residuals")
-    plt.title("Residuals vs Predicted Values")
-
+    plt.title("Actual vs Predicted")
     plt.show()
-
     # Save the entire model
     torch.save(model, "model.pth")
 
@@ -137,9 +152,8 @@ def predict_ratio(SE, CR, gender):
 
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         observed_pred = likelihood(model(inputs_tensor))
-        predicted_value = observed_pred.mean
 
-    return predicted_value.item()
+    return observed_pred
 
 
 if __name__ == "__main__":
