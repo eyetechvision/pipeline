@@ -39,15 +39,15 @@ def main():
         sys.stderr.write("\tpython train_gpr.py features model\n")
         sys.exit(1)
 
-    input = sys.argv[1]
-    output = sys.argv[2]
+    input_path = sys.argv[1]
+    output_path = sys.argv[2]
     # seed = params["seed"]
     # n_est = params["n_est"]
     # min_split = params["min_split"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data = pd.read_csv(input, delimiter=",")
+    data = pd.read_csv(input_path, delimiter=",")
     print(data.columns)
     ###### Data Preprocessing ######
     data["diopter_s"] = pd.to_numeric(data["diopter_s"], errors="coerce")
@@ -137,43 +137,9 @@ def main():
 
     print(f"MSE: {mse}, MAE: {mae}, R2 Score: {r2}")
 
-    # Plotting
-    plt.figure(figsize=(10, 7))
-    plt.scatter(test_y.cpu().numpy(), observed_pred.mean.cpu().numpy())
-    plt.plot([test_y.min(), test_y.max()], [test_y.min(), test_y.max()], "k--")
-
-    print(test_x[:10])
-    # Assuming 'lower' and 'upper' are your confidence bounds
-    plt.fill_between(test_x_1d, lower.cpu().numpy(), upper.cpu().numpy(), alpha=0.5)
-
-    plt.xlabel("Actual")
-    plt.ylabel("Predicted")
-    plt.title("Actual vs Predicted")
-    plt.show()
-    # Save the entire model
-
-    torch.save(model, output)
+    torch.save(model, output_path)
 
     return "yes!"
-
-
-def predict_ratio(SE, CR, gender):
-    # Load the entire model
-    model = torch.load("model.pth")
-    likelihood = gpytorch.likelihoods.GaussianLikelihood()
-    model.eval()
-
-    scaler = joblib.load("scaler.pkl")
-
-    # Process input parameters
-    inputs = np.array([[SE, CR, gender]])
-    inputs = scaler.transform(inputs)  # Apply scaling
-    inputs_tensor = torch.tensor(inputs).float()  # Convert to tensor
-
-    with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        observed_pred = likelihood(model(inputs_tensor))
-
-    return observed_pred
 
 
 if __name__ == "__main__":

@@ -1,0 +1,21 @@
+schema: '2.0'
+stages:
+  train_gpr:
+    cmd: python src/train_gpr.py data/df_high.csv model_gpr.pth
+    deps:
+    - path: data/df_high.csv
+      hash: md5
+      md5: 74ad022e4d07c9eb89759ec040a8a31a
+      size: 47413
+    - path: src/train_gpr.py
+      hash: md5
+      md5: 214e52a3c3dedbe3dab174084f813289
+      size: 4703
+    params:
+      params.yaml:
+        train_gpr.num_iterations: 100
+    outs:
+    - path: model_gpr.pth
+      hash: md5
+      md5: b6467f114d136d227a0464cf83e79fdc
+      size: 12904523

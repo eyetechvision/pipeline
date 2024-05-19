@@ -1,10 +1,10 @@
 stages:
   train_gpr:
-    cmd: python src/gpr_train.py datadf_high.csv model_gpr.pth
+    cmd: python src/train_gpr.py data/df_high.csv model_gpr.pth
     deps:
-    - datadf_high.csv
+    - data/df_high.csv
     - src/train_gpr.py
     params:
-    - num_iterations
+    - train_gpr.num_iterations
     outs:
     - model_gpr.pth
