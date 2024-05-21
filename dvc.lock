@@ -1,21 +1,58 @@
 schema: '2.0'
 stages:
-  train_gpr:
-    cmd: python src/train_gpr.py data/df_high.csv model_gpr.pth
+  prepare_gpr:
+    cmd: python src/prepare_gpr.py data/df_high.csv data/prepared/
     deps:
     - path: data/df_high.csv
       hash: md5
       md5: 74ad022e4d07c9eb89759ec040a8a31a
       size: 47413
+    - path: src/prepare_gpr.py
+      hash: md5
+      md5: 8f843c21e8d3036ab304bef875079cdd
+      size: 1375
+    outs:
+    - path: data/prepared/gpr_test_data.pt
+      hash: md5
+      md5: 5bad578d94d1aec3d112e8133af62424
+      size: 40764
+    - path: data/prepared/gpr_train_data.pt
+      hash: md5
+      md5: ed7e9771829b7cbafa4acdca5bc18b94
+      size: 44034
+  train_gpr:
+    cmd: python src/train_gpr.py data/prepared/gpr_train_data.pt models/model_state_gpr.pth
+    deps:
+    - path: data/prepared/gpr_train_data.pt
+      hash: md5
+      md5: ed7e9771829b7cbafa4acdca5bc18b94
+      size: 44034
     - path: src/train_gpr.py
       hash: md5
-      md5: 88aafe3be673314d50e90d38d7ca9174
-      size: 4773
+      md5: 801d8e40f0de9b8eb3d365e733b919f3
+      size: 2748
     params:
       params.yaml:
-        train_gpr.num_iterations: 100
+        train_gpr:
+          lr: 0.1
+          training_iter: 100
     outs:
-    - path: model_gpr.pth
+    - path: models/model_state_gpr.pth
       hash: md5
-      md5: f4ae68a47b511919dd7d399c8bce9c70
-      size: 12904523
+      md5: 4686c0193f3eca3996f75d213ead8187
+      size: 4584
+  evaluate_gpr:
+    cmd: python src/evaluate_gpr.py models/model_state_gpr.pth data/prepared/gpr_test_data.pt
+    deps:
+    - path: data/prepared/gpr_test_data.pt
+      hash: md5
+      md5: 5bad578d94d1aec3d112e8133af62424
+      size: 40764
+    - path: models/model_state_gpr.pth
+      hash: md5
+      md5: 4686c0193f3eca3996f75d213ead8187
+      size: 4584
+    - path: src/evaluate_gpr.py
+      hash: md5
+      md5: 0597ad91aeffb6843d3031da50e2fcf1
+      size: 3157

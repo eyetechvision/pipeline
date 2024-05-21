@@ -1,2 +1,3 @@
-train_gpr:
-  num_iterations: 100
+train_gpr: 
+  lr: 0.26
+  training_iter: 100

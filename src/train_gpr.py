@@ -48,14 +48,16 @@ def main():
 
     ##############？？？？？
     smoke_test = "CI" in os.environ
-    training_iter = 2 if smoke_test else 50
+    training_iter = 2 if smoke_test else params["training_iter"]
 
     # Initialize likelihood and model
     likelihood = gpytorch.likelihoods.GaussianLikelihood().to(device)
     model = ExactGPModel(train_x, train_y, likelihood).to(device)
 
     # Use the adam optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    lr = params["lr"]
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
     # "Loss" for GPs - the marginal log likelihood
     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
@@ -63,7 +65,7 @@ def main():
     model.train()
     likelihood.train()
 
-    pbar = tqdm(range(100))
+    pbar = tqdm(range(training_iter))
 
     for i in pbar:
         optimizer.zero_grad()
