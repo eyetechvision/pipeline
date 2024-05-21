@@ -1,10 +1,29 @@
 stages:
   train_gpr:
-    cmd: python src/train_gpr.py data/df_high.csv model_gpr.pth
+    cmd: python src/train_gpr.py data/prepared/gpr_train_data.pt models/model_state_gpr.pth
     deps:
-    - data/df_high.csv
+    - data/prepared/gpr_train_data.pt
     - src/train_gpr.py
     params:
     - train_gpr.num_iterations
     outs:
-    - model_gpr.pth
+    - models/model_state_gpr.pth
+  prepare_gpr:
+    cmd: python src/prepare_gpr.py data/df_high.csv data/prepared/
+    deps:
+    - data/df_high.csv
+    - src/prepare_gpr.py
+    outs:
+    - data/prepared/
+  evaluate_gpr:
+    cmd: python src/evaluate_gpr.py models/model_state_gpr.pth data/prepared/gpr_test_data.pt
+    deps:
+    - data/prepared/gpr_test_data.pt
+    - models/model_state_gpr.pth
+    - src/evaluate_gpr.py
+    outs:
+    - results
+metrics:
+- eval/metrics.json
+plots:
+- eval/plots/images

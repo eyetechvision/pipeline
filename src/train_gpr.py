@@ -2,19 +2,15 @@ import pandas as pd
 import numpy as np
 import torch
 import gpytorch
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.preprocessing import MinMaxScaler
+
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import joblib
 import dvc.api
 import yaml
 import os
 import pickle
 import sys
+from torch.utils.data import TensorDataset
 
 
 # Define a Gaussian Process Model
@@ -36,48 +32,21 @@ def main():
 
     if len(sys.argv) != 3:
         sys.stderr.write("Arguments error. Usage:\n")
-        sys.stderr.write("\tpython train_gpr.py features model\n")
+        sys.stderr.write("\tpython prepare_gpr.py input_path output_path\n")
         sys.exit(1)
 
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-    # seed = params["seed"]
-    # n_est = params["n_est"]
-    # min_split = params["min_split"]
 
+    # Move the datasets to the device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data = pd.read_csv(input_path, delimiter=",")
-    print(data.columns)
-    ###### Data Preprocessing ######
-    data["diopter_s"] = pd.to_numeric(data["diopter_s"], errors="coerce")
-    data["diopter_c"] = pd.to_numeric(data["diopter_c"], errors="coerce")
-    data["CR"] = pd.to_numeric(data["CR"], errors="coerce")
+    train_data = torch.load(input_path)
+    train_x, train_y = train_data.dataset.tensors[0].to(
+        device
+    ), train_data.dataset.tensors[1].to(device)
 
-    X = data[["diopter_s", "CR", "gender"]]
-
-    y = data["AL"]
-
-    X = X.dropna()
-    y = y.loc[X.index]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-    ###
-    scaler = MinMaxScaler()
-    X_train = scaler.fit_transform(X_train.values)
-    X_test = scaler.transform(X_test.values)
-    joblib.dump(scaler, "scaler.pkl")
-
-    # Convert your data to PyTorch tensors and move them to the GPU if available
-    train_x = torch.tensor(X_train).float().to(device)
-    train_y = torch.tensor(y_train.values).float().to(device)
-    test_x = torch.tensor(X_test).float().to(device)
-    test_y = torch.tensor(y_test.values).float().to(device)
-
-    import os
-
+    ##############？？？？？
     smoke_test = "CI" in os.environ
     training_iter = 2 if smoke_test else 50
 
@@ -113,33 +82,12 @@ def main():
             )
         )
         optimizer.step()
-    # Switch to evaluation mode
-    model.eval()
-    likelihood.eval()
 
-    # Set the device
-    device = torch.device("cpu")  # Use 'cuda' for GPU
-    model = model.to(device)
-    test_x = test_x.to(device)
+    torch.save(
+        model.state_dict(), output_path
+    )  # save the state, include likelihood and model
 
-    # Prediction and confidence interval calculation
-    with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        observed_pred = likelihood(model(test_x))
-        try:
-            lower, upper = observed_pred.confidence_region()
-        except Exception as e:
-            print("Exception when calculating confidence region:", e)
-    # Calculate evaluation metrics
-    test_y = test_y.to(device)
-    mse = mean_squared_error(test_y.cpu().numpy(), observed_pred.mean.cpu().numpy())
-    mae = mean_absolute_error(test_y.cpu().numpy(), observed_pred.mean.cpu().numpy())
-    r2 = r2_score(test_y.cpu().numpy(), observed_pred.mean.cpu().numpy())
-
-    print(f"MSE: {mse}, MAE: {mae}, R2 Score: {r2}")
-
-    torch.save(model, output_path)
-
-    return "yes!"
+    return model.state_dict()
 
 
 if __name__ == "__main__":
