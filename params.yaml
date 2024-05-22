@@ -1,3 +1,7 @@
 train_gpr: 
   lr: 0.26
   training_iter: 100
+
+train_base_gpr:
+  lr: 0.26
+  training_iter: 100

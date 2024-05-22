@@ -1,4 +1,33 @@
 stages:
+  prepare_base_gpr:
+    cmd: python src/prepare_base_gpr.py data/df_high.csv data/prepared/
+    deps:
+    - data/df_high.csv
+    - src/prepare_base_gpr.py
+    outs:
+    - data/prepared/base_gpr_train_data.pt
+    - data/prepared/base_gpr_test_data.pt
+
+  train_base_gpr:
+    cmd: python src/train_gpr.py data/prepared/base_gpr_train_data.pt models/model_state_base_gpr.pth
+    deps:
+    - data/prepared/base_gpr_train_data.pt
+    - src/train_gpr.py
+    params:
+    - train_base_gpr
+    outs:
+    - models/model_state_base_gpr.pth
+
+  evaluate_base_gpr:
+    cmd: python src/evaluate_gpr.py models/model_state_base_gpr.pth data/prepared/base_gpr_test_data.pt
+    deps:
+    - data/prepared/base_gpr_test_data.pt
+    - models/model_state_base_gpr.pth
+    - src/evaluate_gpr.py
+    outs:
+    - eval/base_gpr_metrics.json
+    - eval/plots/base_gpr_images
+
   prepare_gpr:
     cmd: python src/prepare_gpr.py data/df_high.csv data/prepared/
     deps:
@@ -24,8 +53,13 @@ stages:
     - data/prepared/gpr_test_data.pt
     - models/model_state_gpr.pth
     - src/evaluate_gpr.py
+    outs:
+    - eval/gpr_metrics.json
+    - eval/plots/gpr_images
 
 metrics:
-- eval/metrics.json
+- eval/base_gpr_metrics.json
+- eval/gpr_metrics.json
 plots:
-- eval/plots/images
+- eval/plots/base_gpr_images
+- eval/plots/gpr_images
