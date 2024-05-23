@@ -1,7 +1,11 @@
-train_gpr: 
+train_gpr:
   lr: 0.26
   training_iter: 100
 
 train_base_gpr:
-  lr: 0.26
+  lr: 1
+  training_iter: 100
+
+train_ratio_gpr:
+  lr: 3
   training_iter: 100

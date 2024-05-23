@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 import sys
 import torch
 from torch.utils.data import TensorDataset, random_split
+from sklearn.preprocessing import MinMaxScaler
 
 
 def main():

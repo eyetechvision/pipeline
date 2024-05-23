@@ -56,15 +56,15 @@ def evaluate(model, likelihood, features, labels, split, live, save_path):
 
 
 def main():
-    EVAL_PATH = "eval"
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         sys.stderr.write("Arguments error. Usage:\n")
         sys.stderr.write("\tpython evaluate.py model features\n")
         sys.exit(1)
 
     model_path_name = sys.argv[1]
     testdata_path_name = sys.argv[2]
+    EVAL_PATH = sys.argv[3]
 
     state_dict = torch.load(model_path_name)
     test_data = torch.load(testdata_path_name)
@@ -82,6 +82,7 @@ def main():
     print(model.state_dict())
 
     # Evaluate train and test datasets.
+    # with Live(EVAL_PATH) as live:
     with Live(EVAL_PATH) as live:
         evaluate(model, likelihood, test_x, test_y, "test", live, save_path=EVAL_PATH)
 

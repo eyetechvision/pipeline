@@ -162,3 +162,5 @@ cython_debug/
 /results
 data/prepared
 /eval
+/eval_gpr
+/models

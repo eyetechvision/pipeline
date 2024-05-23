@@ -1,16 +1,12 @@
-import pandas as pd
-import numpy as np
 import torch
 import gpytorch
 
 from tqdm import tqdm
-import joblib
-import dvc.api
+
 import yaml
 import os
-import pickle
+
 import sys
-from torch.utils.data import TensorDataset
 
 
 # Define a Gaussian Process Model
@@ -37,11 +33,13 @@ def main():
 
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-
     # Move the datasets to the device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # Load the data
     train_data = torch.load(input_path)
+
+    # Extract the tensors and move them to the device
     train_x, train_y = train_data.dataset.tensors[0].to(
         device
     ), train_data.dataset.tensors[1].to(device)

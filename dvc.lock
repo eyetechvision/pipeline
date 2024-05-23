@@ -29,8 +29,8 @@ stages:
       size: 44034
     - path: src/train_gpr.py
       hash: md5
-      md5: 801d8e40f0de9b8eb3d365e733b919f3
-      size: 2748
+      md5: cda74dfff54c73045bcda60da4e4d6ad
+      size: 2697
     params:
       params.yaml:
         train_gpr:
@@ -39,10 +39,11 @@ stages:
     outs:
     - path: models/model_state_gpr.pth
       hash: md5
-      md5: b10bca97d4e47e070635f4ce3e5aa27f
+      md5: 954b0a149e1c382c1ce5e45eee5daa0e
       size: 4584
   evaluate_gpr:
     cmd: python src/evaluate_gpr.py models/model_state_gpr.pth data/prepared/gpr_test_data.pt
+      eval/gpr/
     deps:
     - path: data/prepared/gpr_test_data.pt
       hash: md5
@@ -50,12 +51,12 @@ stages:
       size: 40764
     - path: models/model_state_gpr.pth
       hash: md5
-      md5: b10bca97d4e47e070635f4ce3e5aa27f
+      md5: 954b0a149e1c382c1ce5e45eee5daa0e
       size: 4584
     - path: src/evaluate_gpr.py
       hash: md5
-      md5: 0597ad91aeffb6843d3031da50e2fcf1
-      size: 3157
+      md5: 99ba657e4cc3f909228a32372ebcd81b
+      size: 3199
   prepare_base_gpr:
     cmd: python src/prepare_base_gpr.py data/df_high.csv data/prepared/
     deps:
@@ -65,60 +66,112 @@ stages:
       size: 47413
     - path: src/prepare_base_gpr.py
       hash: md5
-      md5: 81de21ff32dddca480cf82294bc417a8
-      size: 1785
+      md5: 115ab37fac2c2d434071742267cec347
+      size: 1833
     outs:
     - path: data/prepared/base_gpr_test_data.pt
       hash: md5
-      md5: 33c8cf8865a0c6a6c4db65a01ccc95c8
+      md5: 24401487b40b53b234746beefc4dd1a2
       size: 40794
     - path: data/prepared/base_gpr_train_data.pt
       hash: md5
-      md5: 79cc9b8871aeed3aab4aacfeab8c7852
-      size: 44128
+      md5: 52bca2fabd3ade60250279a9b76db9fa
+      size: 44064
   train_base_gpr:
     cmd: python src/train_gpr.py data/prepared/base_gpr_train_data.pt models/model_state_base_gpr.pth
     deps:
     - path: data/prepared/base_gpr_train_data.pt
       hash: md5
-      md5: 79cc9b8871aeed3aab4aacfeab8c7852
-      size: 44128
+      md5: 52bca2fabd3ade60250279a9b76db9fa
+      size: 44064
     - path: src/train_gpr.py
       hash: md5
-      md5: 801d8e40f0de9b8eb3d365e733b919f3
-      size: 2748
+      md5: cda74dfff54c73045bcda60da4e4d6ad
+      size: 2697
     params:
       params.yaml:
         train_base_gpr:
-          lr: 0.26
+          lr: 1
           training_iter: 100
     outs:
     - path: models/model_state_base_gpr.pth
       hash: md5
-      md5: ecbd6e58f941654392da44cdcc82cc36
+      md5: 8fa918806bfe6a73d2435b0bcf455e31
       size: 4654
   evaluate_base_gpr:
     cmd: python src/evaluate_gpr.py models/model_state_base_gpr.pth data/prepared/base_gpr_test_data.pt
+      eval/base_gpr
     deps:
     - path: data/prepared/base_gpr_test_data.pt
       hash: md5
-      md5: 33c8cf8865a0c6a6c4db65a01ccc95c8
+      md5: 24401487b40b53b234746beefc4dd1a2
       size: 40794
     - path: models/model_state_base_gpr.pth
       hash: md5
-      md5: ecbd6e58f941654392da44cdcc82cc36
+      md5: 8fa918806bfe6a73d2435b0bcf455e31
       size: 4654
     - path: src/evaluate_gpr.py
       hash: md5
-      md5: 0597ad91aeffb6843d3031da50e2fcf1
-      size: 3157
+      md5: 99ba657e4cc3f909228a32372ebcd81b
+      size: 3199
+  prepare_ratio_gpr:
+    cmd: python src/prepare_ratio_gpr.py data/df_high.csv data/prepared/
+    deps:
+    - path: data/df_high.csv
+      hash: md5
+      md5: 74ad022e4d07c9eb89759ec040a8a31a
+      size: 47413
+    - path: src/prepare_ratio_gpr.py
+      hash: md5
+      md5: c87ac6380dca215d5220a42bf3fe5aee
+      size: 2564
     outs:
-    - path: eval/metrics.json
+    - path: data/prepared/ratio_gpr_scaler.pkl
       hash: md5
-      md5: 60d0ff5dbb3dc00c3e80db08af826986
-      size: 119
-    - path: eval/plots/images
+      md5: 3104c9deb84a130320e4ace01e97caea
+      size: 1175
+    - path: data/prepared/ratio_gpr_test_data.pt
       hash: md5
-      md5: c22ba2e105ea564e161d0b7b200dae46.dir
-      size: 18984
-      nfiles: 1
+      md5: 8777358553cea775f99430cc02a33fec
+      size: 40800
+    - path: data/prepared/ratio_gpr_train_data.pt
+      hash: md5
+      md5: c32df654ee982783bab09893190fa7b2
+      size: 44134
+  train_ratio_gpr:
+    cmd: python src/train_gpr.py data/prepared/ratio_gpr_train_data.pt  models/model_state_ratio_gpr.pth
+    deps:
+    - path: data/prepared/ratio_gpr_train_data.pt
+      hash: md5
+      md5: c32df654ee982783bab09893190fa7b2
+      size: 44134
+    - path: src/train_gpr.py
+      hash: md5
+      md5: cda74dfff54c73045bcda60da4e4d6ad
+      size: 2697
+    params:
+      params.yaml:
+        train_ratio_gpr:
+          lr: 3
+          training_iter: 100
+    outs:
+    - path: models/model_state_ratio_gpr.pth
+      hash: md5
+      md5: ea841eab8102694cc6a5ba4e5597e1a8
+      size: 4668
+  evaluate_ratio_gpr:
+    cmd: python src/evaluate_gpr.py models/model_state_ratio_gpr.pth data/prepared/ratio_gpr_test_data.pt
+      eval/ratio_gpr
+    deps:
+    - path: data/prepared/ratio_gpr_test_data.pt
+      hash: md5
+      md5: 8777358553cea775f99430cc02a33fec
+      size: 40800
+    - path: models/model_state_ratio_gpr.pth
+      hash: md5
+      md5: ea841eab8102694cc6a5ba4e5597e1a8
+      size: 4668
+    - path: src/evaluate_gpr.py
+      hash: md5
+      md5: 99ba657e4cc3f909228a32372ebcd81b
+      size: 3199
