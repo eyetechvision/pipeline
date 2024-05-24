@@ -83,7 +83,7 @@ def main():
 
     # Evaluate train and test datasets.
     # with Live(EVAL_PATH) as live:
-    with Live(EVAL_PATH) as live:
+    with Live(EVAL_PATH, dvcyaml=False) as live:
         evaluate(model, likelihood, test_x, test_y, "test", live, save_path=EVAL_PATH)
 
 

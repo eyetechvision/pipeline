@@ -24,15 +24,18 @@ class ExactGPModel(gpytorch.models.ExactGP):
 
 def main():
 
-    params = yaml.safe_load(open("params.yaml"))["train_gpr"]
-
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         sys.stderr.write("Arguments error. Usage:\n")
         sys.stderr.write("\tpython prepare_gpr.py input_path output_path\n")
         sys.exit(1)
 
     input_path = sys.argv[1]
     output_path = sys.argv[2]
+
+    params_name = sys.argv[3]
+
+    params = yaml.safe_load(open("params.yaml"))[params_name]
+
     # Move the datasets to the device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

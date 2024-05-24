@@ -22,13 +22,8 @@ def main(input_path, output_path):
         sys.exit(f"File not found: {input_path}")
 
     # Ensure the data is numeric
-    # X = data[["age", "diopter_s", "gender"]].apply(pd.to_numeric, errors="coerce")
+    X = data[["age", "diopter_s", "gender"]].apply(pd.to_numeric, errors="coerce")
     AL_CR = data[["AL", "CR"]].apply(pd.to_numeric, errors="coerce")
-
-    # Ensure the data is numeric
-    X = data[["age", "diopter_s"]].apply(pd.to_numeric, errors="coerce")
-    gender = pd.get_dummies(data["gender"], prefix="gender")
-    X = pd.concat([X, gender], axis=1)
 
     # Apply MinMaxScaler
     scaler = MinMaxScaler()
@@ -57,6 +52,12 @@ def main(input_path, output_path):
     train_data, test_data = random_split(dataset, [train_len, test_len])
 
     # Save the datasets to the output path
+    print("Train data:")
+    print(train_data[:5])  # Print the first 5 samples of the train data
+
+    print("\nTest data:")
+    print(test_data[:5])  # Print the first 5 samples of the test data
+
     try:
         torch.save(train_data, output_path_train)
         torch.save(test_data, output_path_test)

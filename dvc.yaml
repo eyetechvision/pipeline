@@ -9,23 +9,22 @@ stages:
     - data/prepared/ratio_gpr_test_data.pt
     - data/prepared/ratio_gpr_scaler.pkl
 
-  train_ratio_gpr:
-    cmd: python src/train_gpr.py data/prepared/ratio_gpr_train_data.pt  models/model_state_ratio_gpr.pth
+  train_nn:
+    cmd: python src/train_nn.py data/prepared/ratio_gpr_train_data.pt models/model_state_nn.pth
     deps:
     - data/prepared/ratio_gpr_train_data.pt
-    - src/train_gpr.py
+    - src/train_nn.py
     params:
-    - train_ratio_gpr
+    - train_nn
     outs:
-    - models/model_state_ratio_gpr.pth
+    - models/model_state_nn.pth
 
-  evaluate_ratio_gpr:
-    cmd: python src/evaluate_gpr.py models/model_state_ratio_gpr.pth data/prepared/ratio_gpr_test_data.pt
-      eval/ratio_gpr
+  evaluate_nn:
+    cmd: python src/evaluate_nn.py models/model_state_nn.pth data/prepared/ratio_gpr_test_data.pt eval/nn/
     deps:
     - data/prepared/ratio_gpr_test_data.pt
-    - models/model_state_ratio_gpr.pth
-    - src/evaluate_gpr.py
+    - models/model_state_nn.pth
+    - src/evaluate_nn.py
 
   prepare_base_gpr:
     cmd: python src/prepare_base_gpr.py data/df_high.csv data/prepared/
@@ -35,25 +34,6 @@ stages:
     outs:
     - data/prepared/base_gpr_train_data.pt
     - data/prepared/base_gpr_test_data.pt
-
-  train_base_gpr:
-    cmd: python src/train_gpr.py data/prepared/base_gpr_train_data.pt models/model_state_base_gpr.pth
-    deps:
-    - data/prepared/base_gpr_train_data.pt
-    - src/train_gpr.py
-    params:
-    - train_base_gpr
-    outs:
-    - models/model_state_base_gpr.pth
-
-  evaluate_base_gpr:
-    cmd: python src/evaluate_gpr.py models/model_state_base_gpr.pth data/prepared/base_gpr_test_data.pt
-      eval/base_gpr
-    deps:
-    - data/prepared/base_gpr_test_data.pt
-    - models/model_state_base_gpr.pth
-    - src/evaluate_gpr.py
-
 
   prepare_gpr:
     cmd: python src/prepare_gpr.py data/df_high.csv data/prepared/
@@ -65,45 +45,44 @@ stages:
     - data/prepared/gpr_test_data.pt
 
   train_gpr:
-    cmd: python src/train_gpr.py data/prepared/gpr_train_data.pt models/model_state_gpr.pth
-    deps:
-    - data/prepared/gpr_train_data.pt
-    - src/train_gpr.py
-    params:
-    - train_gpr
-    outs:
-    - models/model_state_gpr.pth
+    foreach:   # List of simple values
+    - ratio_gpr
+    - base_gpr
+    - gpr
+    do:
+      cmd: python src/train_gpr.py data/prepared/${item}_train_data.pt  models/model_state_${item}.pth
+        train_${item}
+      deps:
+      - data/prepared/${item}_train_data.pt
+      - src/train_gpr.py
+      params:
+      - train_${item}
+      outs:
+      - models/model_state_${item}.pth
 
-  evaluate_gpr:
-    cmd: python src/evaluate_gpr.py models/model_state_gpr.pth data/prepared/gpr_test_data.pt
-      eval/gpr/
-    deps:
-    - data/prepared/gpr_test_data.pt
-    - models/model_state_gpr.pth
-    - src/evaluate_gpr.py
+  evaluate:
+    foreach:   # List of simple values
+    - ratio_gpr
+    - base_gpr
+    - gpr
+    do:
+      cmd: python src/evaluate_gpr.py models/model_state_${item}.pth data/prepared/${item}_test_data.pt
+        eval/${item}
+      deps:
+      - data/prepared/${item}_test_data.pt
+      - models/model_state_${item}.pth
+      - src/evaluate_gpr.py
+
 
 
 metrics:
 - eval/ratio_gpr/metrics.json
-- eval/ratio_gpr/metrics.json
-- eval/ratio_gpr/metrics.json
-- eval/ratio_gpr/metrics.json
-- eval/ratio_gpr/metrics.json
-- eval/ratio_gpr/metrics.json
-- eval/ratio_gpr/metrics.json
-- eval/base_gpr/metrics.json
-- eval/ratio_gpr/metrics.json
 - eval/base_gpr/metrics.json
 - eval/gpr/metrics.json
+- eval/nn/metrics.json
+
 plots:
-- eval/ratio_gpr/plots/images
-- eval/ratio_gpr/plots/images
-- eval/ratio_gpr/plots/images
-- eval/ratio_gpr/plots/images
-- eval/ratio_gpr/plots/images
-- eval/ratio_gpr/plots/images
-- eval/ratio_gpr/plots/images
-- eval/base_gpr/plots/images
 - eval/ratio_gpr/plots/images
 - eval/base_gpr/plots/images
 - eval/gpr/plots/images
+
